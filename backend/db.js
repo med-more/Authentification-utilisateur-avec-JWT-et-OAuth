@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const MONGO_URI = 'mongodb://localhost:27017/login';
 const PORT = 5000;
@@ -16,4 +16,4 @@ const connectDB = async () => {
     }
 };
 
-export { connectDB, PORT };
+module.exports = { connectDB, PORT };
