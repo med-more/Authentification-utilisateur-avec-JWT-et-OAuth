@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MONGO_URI = 'mongodb://localhost:27017/login';
+const MONGO_URI = 'mongodb://127.0.0.1:27017/users';
 const PORT = 5000;
 
 const connectDB = async () => {
