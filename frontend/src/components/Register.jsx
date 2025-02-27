@@ -1,200 +1,119 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
     phone: "",
+    email: "",
     password: "",
     confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   function validateForm() {
     let newErrors = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = "First Name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last Name is required";
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number must be 10 digits";
-    }
-
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (formData.confirmPassword !== formData.password) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = "Enter a valid 10-digit phone number";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.password.trim()) newErrors.password = "Password is required";
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleChange(e) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" }); // Clear error when typing
-  }
-
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!validateForm()) {
       toast.error("Please fix the errors before submitting.");
       return;
     }
-
-    toast.success("Registration successful!", {
-      icon: "🎉",
-      style: { borderRadius: "10px", background: "#333", color: "#fff" },
-    });
-
-    console.log(formData);
+  
+    try {
+      await axios.post("http://localhost:5000/auth/register", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        email: formData.email,
+        password: formData.password,
+      });
+  
+      toast.success("Registration successful! 🎉");
+      setTimeout(() => navigate("/login"), 2000); // Redirect after 2 seconds
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Registration failed!");
+    }
   }
+  
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#141e30] to-[#243b55] p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-900 p-4">
       <Toaster position="top-center" />
-      <div className="w-full max-w-md rounded-xl shadow-lg bg-white p-4 min-h-[250px] overflow-auto">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-800">Create an Account</h2>
-          <p className="text-gray-500 text-sm">Enter your details below</p>
-        </div>
+      <div className="w-full max-w-md bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl p-8 border border-white/20">
+        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg">Create an Account 🖋️</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3 mt-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <input
-                type="text"
-                name="firstName"
-                placeholder="First Name"
-                value={formData.firstName}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.firstName ? "border-red-500" : "focus:ring-indigo-500"
-                }`}
-              />
-              {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
-            </div>
-
-            <div>
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Last Name"
-                value={formData.lastName}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.lastName ? "border-red-500" : "focus:ring-indigo-500"
-                }`}
-              />
-              {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+          <div className="grid grid-cols-2 gap-4">
+            <InputField name="firstName" placeholder="First Name" value={formData.firstName} error={errors.firstName} onChange={setFormData} formData={formData} />
+            <InputField name="lastName" placeholder="Last Name" value={formData.lastName} error={errors.lastName} onChange={setFormData} formData={formData} />
           </div>
+          <InputField name="phone" placeholder="Phone Number" value={formData.phone} error={errors.phone} onChange={setFormData} formData={formData} />
+          <InputField name="email" placeholder="Email" value={formData.email} error={errors.email} onChange={setFormData} formData={formData} />
+          <PasswordField name="password" placeholder="Password" value={formData.password} error={errors.password} onChange={setFormData} formData={formData} show={showPassword} toggle={() => setShowPassword(!showPassword)} />
+          <PasswordField name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={setFormData} formData={formData} />
 
-          <div>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                errors.email ? "border-red-500" : "focus:ring-indigo-500"
-              }`}
-            />
-            {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
-          </div>
-
-          <div>
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                errors.phone ? "border-red-500" : "focus:ring-indigo-500"
-              }`}
-            />
-            {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-          </div>
-
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                errors.password ? "border-red-500" : "focus:ring-indigo-500"
-              }`}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-2 text-gray-500"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-            {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
-          </div>
-
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                errors.confirmPassword ? "border-red-500" : "focus:ring-indigo-500"
-              }`}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-2 text-gray-500"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-xs">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700"
-          >
-            Create Account
+          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-lg font-semibold transition duration-300 shadow-lg hover:shadow-blue-500/50">
+            Register
           </button>
 
-          <p className="text-center text-xs text-gray-600">
-            Already have an account?{" "}
-            <a href="#" className="text-indigo-600 hover:underline">
-              Sign in
-            </a>
+          <p className="text-center text-gray-300">
+            Already have an account? <Link to="/login" className="underline text-blue-400 hover:text-blue-500 transition duration-300">Login</Link>
           </p>
         </form>
       </div>
     </div>
   );
 }
+
+const InputField = ({ name, placeholder, value, error, onChange, formData }) => (
+  <div>
+    <input
+      type="text"
+      name={name}
+      placeholder={placeholder}
+      className="w-full p-3 border border-gray-700 bg-black text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+      value={value}
+      onChange={(e) => onChange({ ...formData, [name]: e.target.value })}
+    />
+    {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+  </div>
+);
+
+const PasswordField = ({ name, placeholder, value, error, onChange, formData, show, toggle }) => (
+  <div className="relative">
+    <input
+      type={show ? "text" : "password"}
+      name={name}
+      placeholder={placeholder}
+      className="w-full p-3 border border-gray-700 bg-black text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+      value={value}
+      onChange={(e) => onChange({ ...formData, [name]: e.target.value })}
+    />
+    <button type="button" className="absolute right-3 top-3 text-gray-400 hover:text-blue-400 transition duration-300" onClick={toggle}>
+      {show ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+    {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+  </div>
+);
