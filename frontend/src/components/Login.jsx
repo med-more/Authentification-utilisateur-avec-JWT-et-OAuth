@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   function validateForm() {
     let newErrors = {};
@@ -16,21 +19,33 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!validateForm()) {
       toast.error("Please fix the errors before submitting.");
       return;
     }
-    toast.success("Login successful! ✅");
-    console.log(formData);
+  
+    try {
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+  
+      localStorage.setItem('token', response.data.token);
+      toast.success("Login successful! 🚀");
+      setTimeout(() => navigate("/hello"), 2000);
+    } catch (error) {
+    console.error("Login error:", error);
+      toast.error(error.response?.data?.message || "Login failed!");
+    }
   }
-
+  
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-900 p-4">
       <Toaster position="top-center" />
       <div className="w-full max-w-md bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl p-8 border border-white/20">
-        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg">Welcome Back</h2>
+        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg">Welcome Back 😉</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <InputField name="email" placeholder="Email" value={formData.email} error={errors.email} onChange={setFormData} formData={formData} />
